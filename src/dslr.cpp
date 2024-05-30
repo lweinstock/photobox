@@ -8,7 +8,7 @@ using namespace std;
 
 GPContext* Dslr::s_ctx = NULL;
 
-Dslr::Dslr()
+Dslr::Dslr() : m_cam(NULL), m_name(""), m_port("")
 {
     if (!s_ctx)
         s_ctx = gp_context_new();
@@ -41,7 +41,7 @@ Dslr::Dslr()
     return;
 }
 
-Dslr::Dslr(string port)
+Dslr::Dslr(string port) : m_cam(NULL), m_name(""), m_port("")
 {
     if (!s_ctx)
         s_ctx = gp_context_new();
@@ -225,6 +225,6 @@ void Dslr::checkAndThrow(int ret, std::string err_msg)
         ss << "(" << ret << ")";
         throw DslrException(ss.str(), ret);
     }
-    
+
     return;
 }

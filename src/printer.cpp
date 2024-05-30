@@ -5,6 +5,7 @@
 using namespace std;
 
 Printer::Printer(string name) 
+    : m_dest(nullptr), m_dests(nullptr), m_num_dests(0), m_jobid(0)
 {
     m_num_dests = cupsGetDests(&m_dests);
     checkAndThrow(m_num_dests, "Failed to get list of printers");
@@ -20,14 +21,6 @@ Printer::Printer(string name)
 Printer::~Printer()
 {
     cupsFreeDests(m_num_dests, m_dests);
-    return;
-}
-
-
-static void getPrinterList(std::vector<std::string> names,
-    std::vector<std::string> interfaces)
-{
-    // TODO
     return;
 }
 
@@ -84,6 +77,12 @@ bool Printer::isStopped() const
     if (state == 5)
         return true;
     return false;
+}
+
+void getPrinterList(vector<string> names, vector<string> interfaces)
+{
+    // TODO
+    return;
 }
 
 /*

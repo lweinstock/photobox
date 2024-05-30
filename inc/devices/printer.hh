@@ -28,9 +28,6 @@ public:
     Printer(std::string name);
     ~Printer();
 
-    static void getPrinterList(std::vector<std::string> names,
-        std::vector<std::string> interfaces);
-
     void printFile(std::string fname);
     void cancelPrint();
 
@@ -40,8 +37,12 @@ public:
     bool isPrinting() const;
     bool isStopped() const;
 
+    // Get list of all supported and connected printers
+    static void getPrinterList(std::vector<std::string> names,
+        std::vector<std::string> interfaces);
+
 private:
-    void checkAndThrow(int ret, std::string msg);
+    static void checkAndThrow(int ret, std::string msg);
     int getState() const;
 
     cups_dest_t *m_dest, *m_dests;
