@@ -10,21 +10,22 @@ LDFLAGS+=$(shell wx-config --libs)
 CFLAGS+=$(shell pkg-config libgphoto2 --cflags)
 LDFLAGS+=$(shell pkg-config libgphoto2 --libs)
 
-# opencv
-#CFLAGS+=$(shell pkg-config opencv --cflags)
-#LDFLAGS+=$(shell pkg-config opencv --libs)
-
 # CUPS
 CFLAGS+=$(shell pkg-config cups --cflags)
 LDFLAGS+=$(shell pkg-config cups --libs)
+
+# opencv
+CFLAGS+=$(shell pkg-config opencv --cflags)
+LDFLAGS+=$(shell pkg-config opencv --libs)
 
 BIN=photobox
 INC=inc
 SRC=src
 
-OBJ=#$(BIN).o
+OBJ=
 OBJ+=$(SRC)/dslr.o
 OBJ+=$(SRC)/printer.o
+OBJ+=$(SRC)/webcam.o
 OBJ+=$(SRC)/photobox.o
 
 .PHONY: all clean
