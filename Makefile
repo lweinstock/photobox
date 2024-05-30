@@ -22,9 +22,10 @@ BIN=photobox
 INC=inc
 SRC=src
 
-OBJ=$(BIN).o
+OBJ=#$(BIN).o
 OBJ+=$(SRC)/dslr.o
 OBJ+=$(SRC)/printer.o
+OBJ+=$(SRC)/photobox.o
 
 .PHONY: all clean
 
