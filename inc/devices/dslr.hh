@@ -39,7 +39,7 @@ public:
     std::string getPort() const { return m_port; }
 
     // Get a list of all connected and supported cameras
-    static void getDslrList(std::vector<std::string> &name_list,
+    static int getDslrList(std::vector<std::string> &name_list,
         std::vector<std::string> &port_list);
 
 private:

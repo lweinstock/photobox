@@ -63,9 +63,9 @@ public:
     virtual bool OnExceptionInMainLoop() override;
 
     // Hardware can be accessed via 'auto ptr = wxGetApp().GetDslr/Printer/...'
-    std::shared_ptr<Dslr> GetDslr() { return m_dslr; }
-    std::shared_ptr<Printer> GetPrinter() { return m_printer; }
-    std::shared_ptr<Webcam> GetWebcam() { return m_webcam; }
+    std::shared_ptr<Dslr> GetDslr();
+    std::shared_ptr<Printer> GetPrinter();
+    std::shared_ptr<Webcam> GetWebcam();
 
 private:
     std::shared_ptr<Dslr> m_dslr;

@@ -7,10 +7,8 @@ using namespace std;
 Webcam::Webcam(string file_name) : m_cap(), m_width(0), m_height(0)
 {
     if ( !m_cap.open(file_name, cv::CAP_V4L) )
-    {
-        cerr << "Failed to open webcam " + file_name << endl;
-        abort();
-    }
+        throw PhotoboxException("Failed to open " + file_name);
+
     m_width = m_cap.get(cv::CAP_PROP_FRAME_WIDTH);
     m_height = m_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 
@@ -38,7 +36,7 @@ cv::Mat Webcam::getFrame(float scale, bool flip)
     if (scale != 1.0)
         cv::resize(frame, frame, cv::Size(), scale, scale);
 
-    if (flip)
+    if (flip)   // Flip image around y-axis
         cv::flip(frame, frame, 1);
 
     return frame;

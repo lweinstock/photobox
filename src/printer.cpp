@@ -10,11 +10,10 @@ Printer::Printer(string name)
     m_num_dests = cupsGetDests(&m_dests);
     checkAndThrow(m_num_dests, "Failed to get list of printers");
     m_dest = cupsGetDest(name.c_str(), NULL, m_num_dests, m_dests);
+
     if (m_dest == NULL) 
-    {
-        cerr << "Failed to get printer '" << name << "'" << endl;
-        abort();
-    }
+        throw PrinterException("Failed to get printer " + name);
+
     return;
 }
 
@@ -79,10 +78,20 @@ bool Printer::isStopped() const
     return false;
 }
 
-void getPrinterList(vector<string> names, vector<string> interfaces)
+int getPrinterList(vector<string> &names, vector<string> &interfaces)
 {
-    // TODO
-    return;
+    cups_dest_t *dests;
+    int n = cupsGetDests(&dests);
+    for (int i = 0; i < n; i++)
+    {
+        names.emplace_back(dests[i].name);
+        if (dests[i].instance)
+            interfaces.emplace_back(dests[i].name);
+        else
+            interfaces.push_back("");
+    }
+
+    return n;
 }
 
 /*

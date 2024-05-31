@@ -1,5 +1,7 @@
 #include <photobox.hh>
 
+using namespace std;
+
 wxImage cvMatToWxImage(cv::Mat &mat)
 {
     cv::Mat tmp;
@@ -91,6 +93,27 @@ void MainFrame::OnTimerVideo(wxTimerEvent &ev)
 /*
  *      T H E   A P P
  */
+
+shared_ptr<Dslr> PhotoBox::GetDslr() 
+{ 
+    if (!m_dslr)
+        throw PhotoboxException("DSLR not initialised");
+    return m_dslr; 
+}
+
+shared_ptr<Printer> PhotoBox::GetPrinter() 
+{ 
+    if (!m_printer)
+        throw PhotoboxException("Printer not initialised");
+    return m_printer; 
+}
+
+shared_ptr<Webcam> PhotoBox::GetWebcam() 
+{ 
+    if (!m_webcam)
+        throw PhotoboxException("Webcam not initialised");
+    return m_webcam; 
+}
 
 bool PhotoBox::OnInit()
 {

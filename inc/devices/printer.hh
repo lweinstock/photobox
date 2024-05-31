@@ -38,8 +38,8 @@ public:
     bool isStopped() const;
 
     // Get list of all supported and connected printers
-    static void getPrinterList(std::vector<std::string> names,
-        std::vector<std::string> interfaces);
+    static int getPrinterList(std::vector<std::string> &names,
+        std::vector<std::string> &interfaces);
 
 private:
     static void checkAndThrow(int ret, std::string msg);

@@ -13,30 +13,25 @@ Dslr::Dslr() : m_cam(NULL), m_name(""), m_port("")
     if (!s_ctx)
         s_ctx = gp_context_new();
 
-    try
-    {
-        this->init();
+    // Initialize camera first camera
+    gp_camera_new(&m_cam);
+    int ret = gp_camera_init(m_cam, s_ctx);
+    checkAndThrow(ret, "Failed to initialise camera");
 
-        // Get camera port
-        GPPortInfo info;
-        char *tmp;
-        int ret = gp_camera_get_port_info(m_cam, &info);
-        checkAndThrow(ret, "Failed to get port info");
-        ret = gp_port_info_get_path(info, &tmp);
-        checkAndThrow(ret, "Failed to get path");
-        m_port = string(tmp);
+    // Get camera port
+    GPPortInfo info;
+    char *tmp;
+    ret = gp_camera_get_port_info(m_cam, &info);
+    checkAndThrow(ret, "Failed to get port info");
+    ret = gp_port_info_get_path(info, &tmp);
+    checkAndThrow(ret, "Failed to get path");
+    m_port = string(tmp);
 
-        // Get camera name
-        CameraAbilities abilities;
-        ret = gp_camera_get_abilities(m_cam, &abilities);
-        checkAndThrow(ret, "Failed to get camera abilities");
-        m_name = string(abilities.model);
-    } 
-    catch (PhotoboxException &ex) 
-    {
-        cerr << ex.what() << endl;
-        abort();
-    }
+    // Get camera name
+    CameraAbilities abilities;
+    ret = gp_camera_get_abilities(m_cam, &abilities);
+    checkAndThrow(ret, "Failed to get camera abilities");
+    m_name = string(abilities.model);
 
     return;
 }
@@ -46,18 +41,48 @@ Dslr::Dslr(string port) : m_cam(NULL), m_name(""), m_port("")
     if (!s_ctx)
         s_ctx = gp_context_new();
 
-    try 
-    {
-        m_port = port;
-        m_name = this->getCameraName(m_port);
-        this->init();
-    } 
-    catch (PhotoboxException &ex) 
-    {
-        cerr << ex.what() << endl;
-        abort();
-    }
-    
+    // Set camera name and port
+    m_port = port;
+    m_name = this->getCameraName(m_port);
+
+    // Get abities of model
+    CameraAbilities abilities;
+    CameraAbilitiesList *ab_list;
+    int ret = gp_abilities_list_new(&ab_list);
+    checkAndThrow(ret, "Failed to intialise abilities list");
+    ret = gp_abilities_list_load(ab_list, s_ctx);
+    checkAndThrow(ret, "Failed to load abilities list");
+    int idx = gp_abilities_list_lookup_model(ab_list, m_name.c_str());
+    checkAndThrow(idx, "Model '" + m_name + "' not found!");
+    ret = gp_abilities_list_get_abilities(ab_list, idx, &abilities);
+    checkAndThrow(ret, "Failed to get camera abilities");
+    // Finally: copy abilities to camera ptr
+    ret = gp_camera_set_abilities(m_cam, abilities);
+    checkAndThrow(ret, "Failed to copy camera abilities");
+
+    // Get port info of the model
+    GPPortInfo port_info;
+    GPPortInfoList* p_list;
+    ret = gp_port_info_list_new(&p_list);
+    checkAndThrow(ret, "Failed to intialise port info list");
+    ret = gp_port_info_list_load(p_list);
+    checkAndThrow(ret, "Failed to load port info list");
+    idx = gp_port_info_list_lookup_path(p_list, m_port.c_str());
+    checkAndThrow(idx, "Port '" + m_port + "' not found!");
+    ret = gp_port_info_list_get_info(p_list, idx, &port_info);
+    checkAndThrow(ret, "Failed to get camera port info");
+    // Finally: copy port info to camera ptr
+    ret = gp_camera_set_port_info(m_cam, port_info);
+    checkAndThrow(ret, "Failed to copy camera port info");
+
+    // Initialize camera
+    ret = gp_camera_init(m_cam, s_ctx);
+    checkAndThrow(ret, "Failed to initialise camera");
+
+    // Cleanup
+    gp_abilities_list_free(ab_list);
+    gp_port_info_list_free(p_list);
+
     return;
 }
 
@@ -95,7 +120,7 @@ void Dslr::captureToFile(std::string path)
     return;
 }
 
-void Dslr::getDslrList(std::vector<std::string> &name_list,
+int Dslr::getDslrList(std::vector<std::string> &name_list,
     std::vector<std::string> &port_list)
 {
     CameraList *list;
@@ -123,7 +148,7 @@ void Dslr::getDslrList(std::vector<std::string> &name_list,
     gp_list_free(list);
     gp_context_unref(ctx);
     
-    return;
+    return n;
 }
 
 /*
