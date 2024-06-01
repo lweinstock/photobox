@@ -118,14 +118,17 @@ shared_ptr<Webcam> PhotoBox::GetWebcam()
 bool PhotoBox::OnInit()
 {
     // Initialise hardware
-    m_webcam = std::make_shared<Webcam>("/dev/video4");
+    //m_webcam = std::make_shared<Webcam>("/dev/video4");
 
-    m_mainFrame = new MainFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
+    //m_mainFrame = new MainFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
+    m_settingsFrame = new SettingsFrame("Settings", wxDefaultPosition, 
+        wxSize(1200, 300));
+    m_settingsFrame->Show();
 
     //m_mainFrame->ShowFullScreen(true); -> For final app!
 
-    m_mainFrame->Maximize(true);
-    m_mainFrame->Show();
+    //m_mainFrame->Maximize(true);
+    //m_mainFrame->Show();
     return true;
 }
 

@@ -12,6 +12,8 @@
 #include <devices/printer.hh>
 #include <devices/webcam.hh>
 
+#include <settings.hh>
+
 class DynamicBitmap : public wxPanel
 {
 public:
@@ -72,7 +74,8 @@ private:
     std::shared_ptr<Printer> m_printer;
     std::shared_ptr<Webcam> m_webcam;
 
-    MainFrame* m_mainFrame;
+    MainFrame *m_mainFrame;
+    SettingsFrame *m_settingsFrame;
 };
 
 wxIMPLEMENT_APP(PhotoBox);

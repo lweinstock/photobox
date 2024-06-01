@@ -27,6 +27,7 @@ OBJ+=$(SRC)/dslr.o
 OBJ+=$(SRC)/printer.o
 OBJ+=$(SRC)/webcam.o
 OBJ+=$(SRC)/photobox.o
+OBJ+=$(SRC)/settings.o
 
 .PHONY: all clean
 
