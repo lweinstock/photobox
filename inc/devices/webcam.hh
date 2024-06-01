@@ -31,6 +31,8 @@ public:
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
 
+    static unsigned getWebcamList(std::vector<std::string> &devices);
+
 private:
     cv::VideoCapture m_cap;
 

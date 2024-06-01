@@ -78,7 +78,7 @@ bool Printer::isStopped() const
     return false;
 }
 
-int getPrinterList(vector<string> &names, vector<string> &interfaces)
+unsigned Printer::getPrinterList(vector<string> &names, vector<string> &interfaces)
 {
     cups_dest_t *dests;
     int n = cupsGetDests(&dests);
@@ -91,7 +91,7 @@ int getPrinterList(vector<string> &names, vector<string> &interfaces)
             interfaces.push_back("");
     }
 
-    return n;
+    return static_cast<unsigned>(n);
 }
 
 /*

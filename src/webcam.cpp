@@ -42,3 +42,21 @@ cv::Mat Webcam::getFrame(float scale, bool flip)
     return frame;
 }
 
+unsigned Webcam::getWebcamList(std::vector<std::string> &devices)
+{
+    // Checks the first 20 (arbitrary choice) devices files '/dev/video*'
+    cv::VideoCapture tmp;
+    for (int i = 0; i < 20; i++)
+    {
+        string dev = "/dev/video" + to_string(i);
+        if ( tmp.open(dev.c_str(), cv::CAP_V4L) )
+        {
+            devices.push_back(dev);
+            tmp.release();
+        }
+    }
+
+    return devices.size();
+}
+
+

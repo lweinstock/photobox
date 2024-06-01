@@ -120,7 +120,7 @@ void Dslr::captureToFile(std::string path)
     return;
 }
 
-int Dslr::getDslrList(std::vector<std::string> &name_list,
+unsigned Dslr::getDslrList(std::vector<std::string> &name_list,
     std::vector<std::string> &port_list)
 {
     CameraList *list;
@@ -148,7 +148,7 @@ int Dslr::getDslrList(std::vector<std::string> &name_list,
     gp_list_free(list);
     gp_context_unref(ctx);
     
-    return n;
+    return static_cast<unsigned>(n);
 }
 
 /*
