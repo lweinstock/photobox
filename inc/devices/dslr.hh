@@ -44,7 +44,6 @@ public:
 
 private:
     std::string getCameraName(std::string port);
-    void init();
     static void checkAndThrow(int ret, std::string err_msg);
 
     static GPContext* s_ctx;
