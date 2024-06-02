@@ -27,9 +27,10 @@ OBJ+=$(SRC)/dslr.o
 OBJ+=$(SRC)/printer.o
 OBJ+=$(SRC)/webcam.o
 OBJ+=$(SRC)/photobox.o
+OBJ+=$(SRC)/view.o
 OBJ+=$(SRC)/settings.o
 
-.PHONY: all clean
+.PHONY: all clean hwtests
 
 all: $(BIN)
 
@@ -37,6 +38,9 @@ all: $(BIN)
 	$(CC) -c -o $@ $< -I$(INC) $(CFLAGS)
 
 $(BIN): $(OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+hwtests: hwtests.o $(SRC)/dslr.o $(SRC)/printer.o $(SRC)/webcam.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 clean:

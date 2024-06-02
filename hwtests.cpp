@@ -14,15 +14,19 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+
     vector<string> names, ports;
     Dslr::getDslrList(names, ports);
     for (size_t i = 0; i < names.size(); i++)
         cout << names.at(i) << " - " << ports.at(i) << endl;
 
-    Dslr cam("usb:001,053");
+    Dslr cam;
     cout << "Camera name: " << cam.getName() << endl;
     cout << "Camera port: " << cam.getPort() << endl;
-    cam.captureToFile("moop4.jpg");
+    //cam.captureToFile("moop4.jpg");
+    char *data;
+    unsigned long size = cam.captureRaw(data);
+    cout << size << endl;
     
 /*
     Printer cp740("CP740");
