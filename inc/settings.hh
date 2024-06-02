@@ -1,10 +1,7 @@
 #ifndef PB_SETTINGS_HH
 #define PB_SETTINGS_HH
 
-#include <wx/wxprec.h>
-#ifndef WX_PRECOMP
-    #include <wx/wx.h>
-#endif
+#include <wx/wx.h>
 
 class SettingsFrame : public wxFrame
 {
@@ -13,6 +10,7 @@ public:
     ~SettingsFrame() {};
 
     void OnButtonListCams(wxCommandEvent &ev);
+    void OnButtonSetCam(wxCommandEvent &ev);
     void OnButtonListDSLRs(wxCommandEvent &ev);
     void OnButtonListPrinters(wxCommandEvent &ev);
 

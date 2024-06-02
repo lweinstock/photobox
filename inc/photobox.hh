@@ -13,44 +13,7 @@
 #include <devices/webcam.hh>
 
 #include <settings.hh>
-
-class DynamicBitmap : public wxPanel
-{
-public:
-    DynamicBitmap(wxWindow* parent, wxWindowID id, 
-        const wxPoint &pos = wxDefaultPosition, 
-        const wxSize &size = wxDefaultSize)
-        : wxPanel(parent, id, pos, size) {};
-
-    void SetBitmap(const wxBitmap &bmp) { m_bitmap = bmp; }
-    wxBitmap GetBitmap() const { return m_bitmap; }
-
-    void PaintEvent(wxPaintEvent &ev);
-    void PaintNow();
-
-private:
-    wxBitmap m_bitmap;
-
-    void Render(wxDC &dc);
-};
-
-/*
- *  Main Window of the App
- */
-
-class MainFrame : public wxFrame
-{
-public:
-    MainFrame(const wxString &title, const wxPoint &pos, const wxSize& size);
-    ~MainFrame() {};
-
-    void OnTimerVideo(wxTimerEvent &ev);
-
-private:
-    DynamicBitmap *m_view;
-    wxBitmap m_bmp;
-    wxTimer m_timer;
-};
+#include <view.hh>
 
 /*
  *  The actual app!
@@ -64,6 +27,11 @@ public:
     virtual void OnUnhandledException() override { throw; }
     virtual bool OnExceptionInMainLoop() override;
 
+    // Initialise hardware
+    bool SetDslr(std::string &port);
+    bool SetPrinter(std::string &name);
+    bool SetWebcam(std::string &dev);
+
     // Hardware can be accessed via 'auto ptr = wxGetApp().GetDslr/Printer/...'
     std::shared_ptr<Dslr> GetDslr();
     std::shared_ptr<Printer> GetPrinter();
@@ -74,10 +42,10 @@ private:
     std::shared_ptr<Printer> m_printer;
     std::shared_ptr<Webcam> m_webcam;
 
-    MainFrame *m_mainFrame;
+    ViewFrame *m_viewFrame;
     SettingsFrame *m_settingsFrame;
 };
 
-wxIMPLEMENT_APP(PhotoBox);
+DECLARE_APP(PhotoBox)
 
 #endif
