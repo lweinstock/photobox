@@ -34,6 +34,7 @@ public:
     ~Dslr();
 
     void captureToFile(std::string name);
+    unsigned long captureRaw(const char *raw_data);
 
     std::string getName() const { return m_name; }
     std::string getPort() const { return m_port; }
