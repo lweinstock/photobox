@@ -1,6 +1,8 @@
 #include <photobox.hh>
 #include <view.hh>
 
+#include <wx/image.h>
+
 using namespace std;
 
 void DynamicBitmap::PaintEvent(wxPaintEvent &ev)
@@ -57,7 +59,7 @@ wxImage cvMatToWxImage(cv::Mat &mat)
 ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos, 
     const wxSize& size) 
     : wxFrame(NULL, wxID_ANY, title, pos, size), m_view(NULL), m_bmp(), 
-    m_timer(this, wxID_ANY)
+    m_timer(this, wxID_ANY), m_state(VIEW_FINDER)
 {
     wxBoxSizer *bSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(bSizer);
@@ -69,10 +71,10 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     wxBoxSizer *bSzVert = new wxBoxSizer(wxVERTICAL);
     bSizer->Add(bSzVert, 0, wxALL | wxEXPAND, 5);
 
-    wxButton *btnTakePicture = new wxButton(this, wxID_ANY, "Take picture");
+    m_btnTakePicture = new wxButton(this, wxID_ANY, "Take picture");
     wxButton *btnPrint = new wxButton(this, wxID_ANY, "Print");
     wxButton *btnUpload = new wxButton(this, wxID_ANY, "Upload");
-    bSzVert->Add(btnTakePicture, 2, wxALL | wxEXPAND, 5);
+    bSzVert->Add(m_btnTakePicture, 2, wxALL | wxEXPAND, 5);
     bSzVert->Add(btnPrint, 1, wxALL | wxEXPAND, 5);
     bSzVert->Add(btnUpload, 1, wxALL | wxEXPAND, 5);
 
@@ -83,26 +85,56 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     // Bindings
     this->Bind(wxEVT_TIMER, &ViewFrame::OnTimerVideo, this);
     m_view->Bind(wxEVT_PAINT, &DynamicBitmap::PaintEvent, m_view);
-    btnTakePicture->Bind(wxEVT_BUTTON, &ViewFrame::OnTakePicture, this);
+    m_btnTakePicture->Bind(wxEVT_BUTTON, &ViewFrame::OnTakePicture, this);
     btnPrint->Bind(wxEVT_BUTTON, &ViewFrame::OnPrint, this);
     btnUpload->Bind(wxEVT_BUTTON, &ViewFrame::OnUpload, this);
+
+    // Add JPG capabilities to wxImage
+    wxImage::AddHandler(new wxJPEGHandler());
 
     return;
 }
 
 void ViewFrame::OnTakePicture(wxCommandEvent &ev)
 {
-    wxStopWatch sw;
-
-    // Wait 5 seconds, update GUI every 20ms
-    while ( sw.Time() < 5000 ) 
+    if (m_state == VIEW_FINDER)
     {
-        usleep(20e3);
-        wxYield();
+        // Wait 5 seconds, update GUI every 20ms
+        wxStopWatch sw;
+        m_btnTakePicture->Disable();
+        while ( sw.Time() < 5000 ) 
+        {
+            if (sw.Time() > 4000) 
+                m_btnTakePicture->SetLabel("1...");
+            else if (sw.Time() > 3000) 
+                m_btnTakePicture->SetLabel("2...");
+            else if (sw.Time() > 2000) 
+                m_btnTakePicture->SetLabel("3...");
+            else if (sw.Time() > 1000) 
+                m_btnTakePicture->SetLabel("4...");
+            else if (sw.Time() > 0) 
+                m_btnTakePicture->SetLabel("5...");
+
+            usleep(20e3);
+            wxYield();
+        }
+
+        // Take picture with DSLR
+        auto dslr = wxGetApp().GetDslr();
+        dslr->captureToFile("tmp.jpg");
+        m_bmp.LoadFile("tmp.jpg", wxBITMAP_TYPE_JPEG);
+
+        // Update button and state
+        m_btnTakePicture->Enable();
+        m_btnTakePicture->SetLabel("Cancel");
+        m_state = SHOW_PHOTO;
+    } 
+    else if (m_state == SHOW_PHOTO)
+    {
+        m_btnTakePicture->SetLabel("Take picture");
+        m_state = VIEW_FINDER;
     }
 
-    auto dslr = wxGetApp().GetDslr();
-    dslr->captureToFile("moop.jpg");
     return;
 }
 
@@ -118,14 +150,19 @@ void ViewFrame::OnUpload(wxCommandEvent &ev)
 
 void ViewFrame::OnTimerVideo(wxTimerEvent &ev)
 {
-    auto webcam = wxGetApp().GetWebcam();
-    // Calculate scaling fractor from height ratio
-    float scale = static_cast<float>(m_view->GetSize().GetHeight()) 
-                / static_cast<float>(webcam->getHeight());
-    cv::Mat mat = webcam->getFrame(scale);
-    m_bmp = cvMatToWxImage(mat);
 
-    // Update webcam view
+    if (m_state == VIEW_FINDER)
+    {
+        auto webcam = wxGetApp().GetWebcam();
+        // Calculate scaling fractor from height ratio
+        float scale = static_cast<float>(m_view->GetSize().GetHeight()) 
+                    / static_cast<float>(webcam->getHeight());
+        // Get image from webcam
+        cv::Mat mat = webcam->getFrame(scale);
+        m_bmp = cvMatToWxImage(mat);
+    }
+
+    // Update dynamic bitmap and refresh
     m_view->SetBitmap(m_bmp);
     m_view->Refresh();
     return;

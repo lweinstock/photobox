@@ -50,8 +50,12 @@ public:
 
 private:
     DynamicBitmap *m_view;
+    wxImage m_img;
     wxBitmap m_bmp;
     wxTimer m_timer;
+    wxButton *m_btnTakePicture;
+
+    enum state : unsigned {VIEW_FINDER = 0, SHOW_PHOTO} m_state;
 };
 
 #endif
