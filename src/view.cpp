@@ -5,6 +5,8 @@
 #include <wx/bitmap.h>
 #include <wx/mstream.h>
 
+#include <fstream>
+
 using namespace std;
 
 void DynamicBitmap::PaintEvent(wxPaintEvent &ev)
@@ -23,6 +25,7 @@ void DynamicBitmap::PaintNow()
 
 void DynamicBitmap::Render(wxDC &dc)
 {
+
     if ( !m_bitmap.IsOk() )
         return;
     int xcenter = (this->GetSize().GetWidth() - m_bitmap.GetWidth())/2;
@@ -62,7 +65,7 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     const wxSize& size) 
     : wxFrame(NULL, wxID_ANY, title, pos, size), m_view(NULL), m_bmp(), 
     m_timer_vid(this, VID_TIMER_ID), m_timer_lpr(this, LPT_TIMER_ID), 
-    m_state(VIEW_FINDER)
+    m_state(VIEW_FINDER), m_cur_number(0)
 {
     wxBoxSizer *bSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(bSizer);
@@ -74,12 +77,12 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     wxBoxSizer *bSzVert = new wxBoxSizer(wxVERTICAL);
     bSizer->Add(bSzVert, 0, wxALL | wxEXPAND, 5);
 
-    m_btnTakePicture = new wxButton(this, wxID_ANY, "Take picture");
-    wxButton *btnPrint = new wxButton(this, wxID_ANY, "Print");
-    wxButton *btnUpload = new wxButton(this, wxID_ANY, "Upload");
+    m_btnTakePicture = new wxButton(this, wxID_ANY, "Bild aufnehmen");
+    wxButton *btnPrint = new wxButton(this, wxID_ANY, "Drucken");
+    wxButton *btnSave = new wxButton(this, wxID_ANY, "Speichern");
     bSzVert->Add(m_btnTakePicture, 2, wxALL | wxEXPAND, 5);
     bSzVert->Add(btnPrint, 1, wxALL | wxEXPAND, 5);
-    bSzVert->Add(btnUpload, 1, wxALL | wxEXPAND, 5);
+    bSzVert->Add(btnSave, 1, wxALL | wxEXPAND, 5);
 
     this->Layout();
 
@@ -91,7 +94,7 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     m_view->Bind(wxEVT_PAINT, &DynamicBitmap::PaintEvent, m_view);
     m_btnTakePicture->Bind(wxEVT_BUTTON, &ViewFrame::OnTakePicture, this);
     btnPrint->Bind(wxEVT_BUTTON, &ViewFrame::OnPrint, this);
-    btnUpload->Bind(wxEVT_BUTTON, &ViewFrame::OnUpload, this);
+    btnSave->Bind(wxEVT_BUTTON, &ViewFrame::OnSave, this);
 
     // Add JPG capabilities to wxImage
     wxImage::AddHandler(new wxJPEGHandler());
@@ -146,12 +149,12 @@ void ViewFrame::OnTakePicture(wxCommandEvent &ev)
 
         // Update button and state
         m_btnTakePicture->Enable();
-        m_btnTakePicture->SetLabel("Cancel");
+        m_btnTakePicture->SetLabel("Abbrechen");
         m_state = SHOW_PHOTO;
     } 
     else if (m_state == SHOW_PHOTO)
     {
-        m_btnTakePicture->SetLabel("Take picture");
+        m_btnTakePicture->SetLabel("Bild aufnehmen");
         m_state = VIEW_FINDER;
     }
 
@@ -171,8 +174,25 @@ void ViewFrame::OnPrint(wxCommandEvent &ev)
     return;
 }
 
-void ViewFrame::OnUpload(wxCommandEvent &ev)
+void ViewFrame::OnSave(wxCommandEvent &ev)
 {
+    bool file_exists = true;
+    string fname("");
+
+    while (file_exists)
+    {
+        fname = "imgs/img_" + to_string(m_cur_number) + ".jpg";
+        ifstream ifs(fname, ifstream::in);
+        if (ifs) {
+            file_exists = true;
+            m_cur_number++;
+        } else 
+            file_exists = false;
+        ifs.close();
+    }
+
+    m_bmp.SaveFile(fname.c_str(), wxBITMAP_TYPE_JPEG);
+    wxMessageBox("Bild gespeichert unter '" + fname + "'!");
     return;
 }
 
@@ -206,10 +226,17 @@ void ViewFrame::OnTimerPrinter(wxTimerEvent &ev)
     // Something is amiss!
     printer->cancelAllJobs();
     printer->reset();
-    wxMessageDialog dia(this, "Bitte pruefen Sie, ob ausreichend Papier und "
-        "Toner vorhanden sind. Starten Sie den Druckvorgang danach erneut.",
-        "Der Drucker konnte den Druckvorgang nicht starten!", wxOK);
-    dia.ShowModal();
+    wxMessageBox(
+        "Der Drucker konnte den Druckvorgang nicht starten. Bitte prufen Sie\n"
+        "\n"
+        "\t- Ist ausreichend Papier in der Zufuhr?\n"
+        "\t- Ist die Papierzufuhr korrekt eingefuhrt?\n"
+        "\t- Ist ausreichend Toner vorhanden ('E' auf dem Toner)?\n"
+        "\n"
+        "Starten Sie den Druckvorgang danach neu.",
+        "Achtung!", 
+        wxOK
+    );
     
     return;
 }

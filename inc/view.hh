@@ -45,7 +45,7 @@ public:
 
     void OnTakePicture(wxCommandEvent &ev);
     void OnPrint(wxCommandEvent &ev);
-    void OnUpload(wxCommandEvent &ev);
+    void OnSave(wxCommandEvent &ev);
     void OnTimerVideo(wxTimerEvent &ev);
     void OnTimerPrinter(wxTimerEvent &ev);
 
@@ -56,6 +56,7 @@ private:
     wxBitmap m_bmp;
     wxTimer m_timer_vid, m_timer_lpr;
     wxButton *m_btnTakePicture;
+    int m_cur_number;
 
     enum state : unsigned {VIEW_FINDER = 0, SHOW_PHOTO} m_state;
 };
