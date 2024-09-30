@@ -29,22 +29,28 @@ public:
     ~Printer();
 
     void printFile(std::string fname);
+    void restartPrint();
     void cancelPrint();
+    void cancelAllJobs();
 
-    std::string getInfo() const;
-    std::string getStateDesc() const;
-    bool isAcceptingJobs() const;
-    bool isPrinting() const;
-    bool isStopped() const;
+    std::string getInfo();
+    std::string getStateDesc();
+    bool isAcceptingJobs();
+    bool isIdle();
+    bool isPrinting();
+    bool isStopped();
+    void reset();
 
     // Get list of all supported and connected printers
     static unsigned getPrinterList(std::vector<std::string> &names,
         std::vector<std::string> &interfaces);
 
 private:
+    void updateDest();  // Update printer information stored in m_dest
+    int getState();
     static void checkAndThrow(int ret, std::string msg);
-    int getState() const;
 
+    std::string m_name;
     cups_dest_t *m_dest, *m_dests;
     int m_num_dests, m_jobid;
 };

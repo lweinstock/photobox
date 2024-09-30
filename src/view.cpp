@@ -2,6 +2,8 @@
 #include <view.hh>
 
 #include <wx/image.h>
+#include <wx/bitmap.h>
+#include <wx/mstream.h>
 
 using namespace std;
 
@@ -59,7 +61,8 @@ wxImage cvMatToWxImage(cv::Mat &mat)
 ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos, 
     const wxSize& size) 
     : wxFrame(NULL, wxID_ANY, title, pos, size), m_view(NULL), m_bmp(), 
-    m_timer(this, wxID_ANY), m_state(VIEW_FINDER)
+    m_timer_vid(this, VID_TIMER_ID), m_timer_lpr(this, LPT_TIMER_ID), 
+    m_state(VIEW_FINDER)
 {
     wxBoxSizer *bSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(bSizer);
@@ -80,10 +83,11 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
 
     this->Layout();
 
-    m_timer.Start(60);
+    m_timer_vid.Start(100);
 
     // Bindings
-    this->Bind(wxEVT_TIMER, &ViewFrame::OnTimerVideo, this);
+    this->Bind(wxEVT_TIMER, &ViewFrame::OnTimerVideo, this, VID_TIMER_ID);
+    this->Bind(wxEVT_TIMER, &ViewFrame::OnTimerPrinter, this, LPT_TIMER_ID);
     m_view->Bind(wxEVT_PAINT, &DynamicBitmap::PaintEvent, m_view);
     m_btnTakePicture->Bind(wxEVT_BUTTON, &ViewFrame::OnTakePicture, this);
     btnPrint->Bind(wxEVT_BUTTON, &ViewFrame::OnPrint, this);
@@ -119,10 +123,26 @@ void ViewFrame::OnTakePicture(wxCommandEvent &ev)
             wxYield();
         }
 
-        // Take picture with DSLR
+        // Take picture with DSLR (try 5 times max.)
         auto dslr = wxGetApp().GetDslr();
-        dslr->captureToFile("tmp.jpg");
-        m_bmp.LoadFile("tmp.jpg", wxBITMAP_TYPE_JPEG);
+        for (int i = 0; i < 5; i++) 
+        {
+            try
+            {
+                //dslr->captureToFile("tmp.jpg");
+                //m_bmp.LoadFile("tmp.jpg", wxBITMAP_TYPE_JPEG);
+                vector<char> data = dslr->capture();
+                wxMemoryInputStream dataStream(data.data(), data.size());
+                m_img.LoadFile(dataStream, wxBITMAP_TYPE_JPEG);
+                m_bmp = m_img.Mirror();
+                break;
+            }
+            catch(PhotoboxException &ex)
+            {
+                cout << "Retrying..." << endl;
+                continue;
+            }
+        }
 
         // Update button and state
         m_btnTakePicture->Enable();
@@ -140,6 +160,14 @@ void ViewFrame::OnTakePicture(wxCommandEvent &ev)
 
 void ViewFrame::OnPrint(wxCommandEvent &ev)
 {
+    auto printer = wxGetApp().GetPrinter();
+
+    if ( printer->isPrinting() )    // Dont start a new job
+        return;
+
+    m_bmp.SaveFile("tmp.jpg", wxBITMAP_TYPE_JPEG);
+    printer->printFile("tmp.jpg");
+    m_timer_lpr.StartOnce(5000);    // Check printing status in 5s
     return;
 }
 
@@ -150,20 +178,38 @@ void ViewFrame::OnUpload(wxCommandEvent &ev)
 
 void ViewFrame::OnTimerVideo(wxTimerEvent &ev)
 {
-
     if (m_state == VIEW_FINDER)
     {
         auto webcam = wxGetApp().GetWebcam();
-        // Calculate scaling fractor from height ratio
-        float scale = static_cast<float>(m_view->GetSize().GetHeight()) 
-                    / static_cast<float>(webcam->getHeight());
         // Get image from webcam
-        cv::Mat mat = webcam->getFrame(scale);
+        cv::Mat mat = webcam->getFrame(/*scale*/);
         m_bmp = cvMatToWxImage(mat);
     }
-
+    // Calculate scaling fractor from height ratio
+    float scale = static_cast<float>(m_view->GetSize().GetHeight()) 
+                / static_cast<float>(m_bmp.GetSize().GetHeight());
+    // Resize image to always fill the screen
+    wxBitmap::Rescale(m_bmp, scale*m_bmp.GetSize());
     // Update dynamic bitmap and refresh
     m_view->SetBitmap(m_bmp);
     m_view->Refresh();
+    return;
+}
+
+void ViewFrame::OnTimerPrinter(wxTimerEvent &ev)
+{
+    auto printer = wxGetApp().GetPrinter();
+
+    if ( printer->isPrinting() )    // Everything is fine
+        return;
+
+    // Something is amiss!
+    printer->cancelAllJobs();
+    printer->reset();
+    wxMessageDialog dia(this, "Bitte pruefen Sie, ob ausreichend Papier und "
+        "Toner vorhanden sind. Starten Sie den Druckvorgang danach erneut.",
+        "Der Drucker konnte den Druckvorgang nicht starten!", wxOK);
+    dia.ShowModal();
+    
     return;
 }

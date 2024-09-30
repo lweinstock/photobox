@@ -47,15 +47,22 @@ public:
     void OnPrint(wxCommandEvent &ev);
     void OnUpload(wxCommandEvent &ev);
     void OnTimerVideo(wxTimerEvent &ev);
+    void OnTimerPrinter(wxTimerEvent &ev);
+
 
 private:
     DynamicBitmap *m_view;
     wxImage m_img;
     wxBitmap m_bmp;
-    wxTimer m_timer;
+    wxTimer m_timer_vid, m_timer_lpr;
     wxButton *m_btnTakePicture;
 
     enum state : unsigned {VIEW_FINDER = 0, SHOW_PHOTO} m_state;
+};
+
+enum {
+    LPT_TIMER_ID = wxID_HIGHEST + 1,
+    VID_TIMER_ID
 };
 
 #endif

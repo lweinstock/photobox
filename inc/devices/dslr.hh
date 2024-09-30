@@ -1,6 +1,8 @@
 #ifndef PB_DSLR_HH
 #define PB_DSLR_HH
 
+#include <vector>
+
 #include <gphoto2/gphoto2.h>
 #include <wx/image.h>
 
@@ -34,7 +36,7 @@ public:
     ~Dslr();
 
     void captureToFile(std::string name);
-    unsigned long captureRaw(const char *raw_data);
+    std::vector<char> capture();
 
     std::string getName() const { return m_name; }
     std::string getPort() const { return m_port; }

@@ -122,13 +122,26 @@ void Dslr::captureToFile(std::string path)
     return;
 }
 
-unsigned long Dslr::captureRaw(const char *raw_data)
+vector<char> Dslr::capture()
 {
     // Capture image and get file path on camera
     CameraFilePath cam_path;
     int ret = gp_camera_capture(m_cam, GP_CAPTURE_IMAGE, &cam_path, s_ctx);
     checkAndThrow(ret, "Failed to capture image");
-
+/*
+    // Get image height and width
+    CameraFileInfo info;
+    ret = gp_camera_file_get_info(m_cam, cam_path.folder, cam_path.name, &info, s_ctx);
+    checkAndThrow(ret, "Failed to get file info");
+    uint32_t height = info.file.height;
+    uint32_t width = info.file.width;
+    uint64_t fsize = info.file.size;
+    if (info.file.fields & GP_FILE_INFO_HEIGHT) 
+        cout << "Height set" << endl;
+    else
+        cout << "Height not set" << endl;
+    cout << height << " x " << width << " (" << fsize << ")" << endl;
+*/
     // Copy file from camera to disk
     CameraFile *cam_file;
     ret = gp_file_new(&cam_file);
@@ -137,15 +150,18 @@ unsigned long Dslr::captureRaw(const char *raw_data)
         GP_FILE_TYPE_NORMAL, cam_file, s_ctx);
     checkAndThrow(ret, "Failed to copy file from camera");
 
+    // Copy data into vector
     unsigned long size;
+    const char* raw_data;
     gp_file_get_data_and_size(cam_file, &raw_data, &size);
+    vector<char> data(raw_data, raw_data + size);
 
     // Remove file from camera
     ret = gp_camera_file_delete(m_cam, cam_path.folder, cam_path.name, s_ctx);
     checkAndThrow(ret, "Failed to delete file from camera");
     gp_file_free(cam_file);
 
-    return size;
+    return data;
 
 }
 

@@ -9,6 +9,7 @@ bool PhotoBox::OnInit()
     // Initialise hardware
     m_webcam = std::make_shared<Webcam>("/dev/video4");
     m_dslr = std::make_shared<Dslr>();
+    m_printer = std::make_shared<Printer>("CP740");
 
     m_viewFrame = new ViewFrame("View Finder", wxDefaultPosition, 
         wxSize(450, 600));

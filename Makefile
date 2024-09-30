@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -g -Og
+CFLAGS=-Wall -g #-Og
 LDFLAGS=
 
 # wxwidgets
