@@ -56,6 +56,8 @@ private:
     wxBitmap m_bmp;
     wxTimer m_timer_vid, m_timer_lpr;
     wxButton *m_btnTakePicture;
+    wxButton *m_btnPrint;
+    wxButton *m_btnSave;
     int m_cur_number;
 
     enum state : unsigned {VIEW_FINDER = 0, SHOW_PHOTO} m_state;

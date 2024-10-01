@@ -6,7 +6,7 @@ using namespace std;
 
 Webcam::Webcam(string file_name) : m_cap(), m_width(0), m_height(0)
 {
-    if ( !m_cap.open(file_name, cv::CAP_ANY) )
+    if ( !m_cap.open(file_name, cv::CAP_V4L2) )
         throw PhotoboxException("Failed to open " + file_name);
 
     m_width = m_cap.get(cv::CAP_PROP_FRAME_WIDTH);

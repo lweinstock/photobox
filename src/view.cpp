@@ -6,8 +6,38 @@
 #include <wx/mstream.h>
 
 #include <fstream>
+#include <thread>
 
 using namespace std;
+
+vector<string> g_sfx_capture {
+    "sfx/there-you-are.mp3",
+    "sfx/gotcha.mp3",
+    "sfx/i-see-you.mp3",
+    "sfx/target-acquired.mp3"
+};
+
+vector<string> g_sfx_no_target {
+    "sfx/are-you-still-there.mp3",
+    "sfx/come-closer.mp3",
+    "sfx/is-anyone-there.mp3",
+    "sfx/whos-there.mp3",
+    "sfx/target-lost.mp3"
+};
+
+vector<string> g_sfx_error {
+    "sfx/critical-error.mp3",
+    "sfx/illegal-operation.mp3",
+    "sfx/oh-dear.mp3",
+};
+
+void playSound(std::string fname)   // Quick and dirty solution for playing 
+{                                   // sounds -> to be revised!
+    std::string command = "ffplay -v 0 -nodisp -autoexit ";
+    command += fname;
+    system(command.c_str());
+    return;
+}
 
 void DynamicBitmap::PaintEvent(wxPaintEvent &ev)
 {
@@ -65,7 +95,7 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     const wxSize& size) 
     : wxFrame(NULL, wxID_ANY, title, pos, size), m_view(NULL), m_bmp(), 
     m_timer_vid(this, VID_TIMER_ID), m_timer_lpr(this, LPT_TIMER_ID), 
-    m_state(VIEW_FINDER), m_cur_number(0)
+    m_cur_number(0), m_state(VIEW_FINDER)
 {
     wxBoxSizer *bSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(bSizer);
@@ -78,12 +108,15 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     bSizer->Add(bSzVert, 0, wxALL | wxEXPAND, 5);
 
     m_btnTakePicture = new wxButton(this, wxID_ANY, "Bild aufnehmen");
-    wxButton *btnPrint = new wxButton(this, wxID_ANY, "Drucken");
-    wxButton *btnSave = new wxButton(this, wxID_ANY, "Speichern");
+    m_btnPrint = new wxButton(this, wxID_ANY, "Drucken");
+    m_btnSave = new wxButton(this, wxID_ANY, "Speichern");
     bSzVert->Add(m_btnTakePicture, 2, wxALL | wxEXPAND, 5);
-    bSzVert->Add(btnPrint, 1, wxALL | wxEXPAND, 5);
-    bSzVert->Add(btnSave, 1, wxALL | wxEXPAND, 5);
+    bSzVert->Add(m_btnPrint, 1, wxALL | wxEXPAND, 5);
+    bSzVert->Add(m_btnSave, 1, wxALL | wxEXPAND, 5);
 
+    // Starting in view finder -> disable print and save button
+    m_btnPrint->Disable();
+    m_btnSave->Disable();
     this->Layout();
 
     m_timer_vid.Start(100);
@@ -93,8 +126,8 @@ ViewFrame::ViewFrame(const wxString& title, const wxPoint& pos,
     this->Bind(wxEVT_TIMER, &ViewFrame::OnTimerPrinter, this, LPT_TIMER_ID);
     m_view->Bind(wxEVT_PAINT, &DynamicBitmap::PaintEvent, m_view);
     m_btnTakePicture->Bind(wxEVT_BUTTON, &ViewFrame::OnTakePicture, this);
-    btnPrint->Bind(wxEVT_BUTTON, &ViewFrame::OnPrint, this);
-    btnSave->Bind(wxEVT_BUTTON, &ViewFrame::OnSave, this);
+    m_btnPrint->Bind(wxEVT_BUTTON, &ViewFrame::OnPrint, this);
+    m_btnSave->Bind(wxEVT_BUTTON, &ViewFrame::OnSave, this);
 
     // Add JPG capabilities to wxImage
     wxImage::AddHandler(new wxJPEGHandler());
@@ -128,13 +161,14 @@ void ViewFrame::OnTakePicture(wxCommandEvent &ev)
 
         // Take picture with DSLR (try 5 times max.)
         auto dslr = wxGetApp().GetDslr();
-        for (int i = 0; i < 5; i++) 
+        int i;
+        for (i = 0; i < 5; i++) 
         {
             try
             {
-                //dslr->captureToFile("tmp.jpg");
-                //m_bmp.LoadFile("tmp.jpg", wxBITMAP_TYPE_JPEG);
                 vector<char> data = dslr->capture();
+                int idx = rand() % g_sfx_capture.size();
+                thread(playSound, g_sfx_capture.at(idx)).detach();
                 wxMemoryInputStream dataStream(data.data(), data.size());
                 m_img.LoadFile(dataStream, wxBITMAP_TYPE_JPEG);
                 m_bmp = m_img.Mirror();
@@ -142,19 +176,36 @@ void ViewFrame::OnTakePicture(wxCommandEvent &ev)
             }
             catch(PhotoboxException &ex)
             {
+                int idx = rand() % g_sfx_no_target.size();
+                thread t(playSound, g_sfx_no_target.at(idx));
                 cout << "Retrying..." << endl;
+                t.join();
                 continue;
             }
         }
 
+        if (i == 5) // No target found after 5 tries
+        {
+            m_btnTakePicture->SetLabel("Bild aufnehmen");
+            m_btnTakePicture->Enable();
+            m_btnPrint->Disable();
+            m_btnSave->Disable();
+            m_state = VIEW_FINDER;
+            return;
+        }
+
         // Update button and state
         m_btnTakePicture->Enable();
+        m_btnPrint->Enable();
+        m_btnSave->Enable();
         m_btnTakePicture->SetLabel("Abbrechen");
         m_state = SHOW_PHOTO;
     } 
     else if (m_state == SHOW_PHOTO)
     {
         m_btnTakePicture->SetLabel("Bild aufnehmen");
+        m_btnPrint->Disable();
+        m_btnSave->Disable();
         m_state = VIEW_FINDER;
     }
 
@@ -224,6 +275,8 @@ void ViewFrame::OnTimerPrinter(wxTimerEvent &ev)
         return;
 
     // Something is amiss!
+    int idx = rand() % g_sfx_error.size();
+    thread(playSound, g_sfx_error.at(idx)).detach();
     printer->cancelAllJobs();
     printer->reset();
     wxMessageBox(
